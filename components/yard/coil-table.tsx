@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,7 +11,7 @@ import type { Zone, Coil } from "@/lib/types"
 import { statusColors } from "@/lib/types"
 import { getCoilsInZone } from "@/lib/data"
 import { TransferDialog } from "./transfer-dialog"
-import { Package, ArrowRightLeft } from "lucide-react"
+import { Package, ArrowRightLeft, GripVertical } from "lucide-react"
 
 interface CoilTableProps {
   selectedZone: Zone | null
@@ -28,6 +30,11 @@ export function CoilTable({ selectedZone, onDataChange }: CoilTableProps) {
   const handleTransferComplete = () => {
     setTransferCoil(null)
     onDataChange()
+  }
+
+  const handleDragStart = (e: React.DragEvent, coil: Coil & { stackNo: number; entryDate: Date }) => {
+    e.dataTransfer.setData("coilId", coil.id)
+    e.dataTransfer.effectAllowed = "move"
   }
 
   if (!selectedZone) {
@@ -71,9 +78,14 @@ export function CoilTable({ selectedZone, onDataChange }: CoilTableProps) {
             </div>
           ) : (
             <div className="border rounded-lg overflow-hidden">
+              <div className="bg-muted/50 px-3 py-1.5 border-b text-xs text-muted-foreground flex items-center gap-1">
+                <GripVertical className="h-3 w-3" />
+                Drag a coil row and drop on a zone to transfer
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
+                    <TableHead className="w-[40px]"></TableHead>
                     <TableHead className="w-[100px]">Coil ID</TableHead>
                     <TableHead className="w-[60px]">Type</TableHead>
                     <TableHead className="w-[80px]">Grade</TableHead>
@@ -91,7 +103,15 @@ export function CoilTable({ selectedZone, onDataChange }: CoilTableProps) {
                   {coilsInZone
                     .sort((a, b) => a.stackNo - b.stackNo)
                     .map((coil) => (
-                      <TableRow key={coil.id} className="hover:bg-muted/30">
+                      <TableRow
+                        key={coil.id}
+                        className="hover:bg-muted/30 cursor-grab active:cursor-grabbing"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, coil)}
+                      >
+                        <TableCell className="text-muted-foreground">
+                          <GripVertical className="h-4 w-4" />
+                        </TableCell>
                         <TableCell className="font-mono font-semibold">{coil.id}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-xs">
