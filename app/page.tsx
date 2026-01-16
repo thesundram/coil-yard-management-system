@@ -1,42 +1,69 @@
-"use client"
+"use client";
 
-import { useState, useCallback, Suspense } from "react"
-import { YardArea } from "@/components/yard/yard-area"
-import { CoilTable } from "@/components/yard/coil-table"
-import { SearchPanel } from "@/components/yard/search-panel"
-import { Legend } from "@/components/yard/legend"
-import { StatsBar } from "@/components/yard/stats-bar"
-import { ExcelUpload } from "@/components/yard/excel-upload"
-import { getZonesByArea, getZoneById } from "@/lib/data"
-import type { Zone } from "@/lib/types"
-import { Factory } from "lucide-react"
-import { Footer } from "@/components/footer"
+import { useState, useCallback, Suspense } from "react";
+import { YardArea } from "@/components/yard/yard-area";
+import { CoilTable } from "@/components/yard/coil-table";
+import { SearchPanel } from "@/components/yard/search-panel";
+import { Legend } from "@/components/yard/legend";
+import { StatsBar } from "@/components/yard/stats-bar";
+import { ExcelUpload } from "@/components/yard/excel-upload";
+import { getZonesByArea, getZoneById, transferCoil } from "@/lib/data";
+import type { Zone } from "@/lib/types";
+import { Factory } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Footer } from "@/components/footer";
 
 function YardVisualizationContent() {
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
-  const [highlightedZoneId, setHighlightedZoneId] = useState<string | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [highlightedZoneId, setHighlightedZoneId] = useState<string | null>(
+    null
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { toast } = useToast();
 
-  const shade1Zones = getZonesByArea("S1")
-  const shade2Zones = getZonesByArea("S2")
-  const openZones = getZonesByArea("OP")
+  const shade1Zones = getZonesByArea("S1");
+  const shade2Zones = getZonesByArea("S2");
+  const openZones = getZonesByArea("OP");
 
-  const selectedZone = selectedZoneId ? (getZoneById(selectedZoneId) ?? null) : null
+  const selectedZone = selectedZoneId
+    ? getZoneById(selectedZoneId) ?? null
+    : null;
 
   const handleZoneClick = (zone: Zone) => {
-    setSelectedZoneId(zone.id)
-    setHighlightedZoneId(null)
-  }
+    setSelectedZoneId(zone.id);
+    setHighlightedZoneId(null);
+  };
 
   const handleLocateCoil = (zoneId: string) => {
-    setHighlightedZoneId(zoneId)
-    setSelectedZoneId(zoneId)
-    setTimeout(() => setHighlightedZoneId(null), 3000)
-  }
+    setHighlightedZoneId(zoneId);
+    setSelectedZoneId(zoneId);
+    setTimeout(() => setHighlightedZoneId(null), 3000);
+  };
 
   const handleDataChange = useCallback(() => {
-    setRefreshKey((k) => k + 1)
-  }, [])
+    setRefreshKey((k) => k + 1);
+  }, []);
+
+  const handleCoilDrop = useCallback(
+    (coilId: string, toZoneId: string) => {
+      const result = transferCoil(coilId, toZoneId);
+      if (result.success) {
+        toast({
+          title: "Coil Transferred",
+          description: result.message,
+        });
+        setSelectedZoneId(toZoneId);
+        setRefreshKey((k) => k + 1);
+      } else {
+        toast({
+          title: "Transfer Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
 
   return (
     <div className="min-h-screen bg-background" key={refreshKey}>
@@ -48,9 +75,15 @@ function YardVisualizationContent() {
               <Factory className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-balance">Coil Yard Management System</h1>
-              <p className="text-sm text-muted-foreground">Real-time Yard Visualization & Allocation</p>
-              <p className="text-xs text-muted-foreground font-medium">By Uttam Innovative Solution</p>
+              <h1 className="text-xl font-bold text-balance">
+                Coil Yard Management System
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Real-time Yard Visualization & Allocation
+              </p>
+              <p className="text-xs text-muted-foreground font-medium">
+                By Uttam Innovatime Solution
+              </p>
             </div>
           </div>
         </div>
@@ -79,6 +112,7 @@ function YardVisualizationContent() {
               selectedZoneId={selectedZoneId}
               highlightedZoneId={highlightedZoneId}
               onZoneClick={handleZoneClick}
+              onCoilDrop={handleCoilDrop}
               columns={5}
             />
             <YardArea
@@ -87,6 +121,7 @@ function YardVisualizationContent() {
               selectedZoneId={selectedZoneId}
               highlightedZoneId={highlightedZoneId}
               onZoneClick={handleZoneClick}
+              onCoilDrop={handleCoilDrop}
               columns={5}
             />
           </div>
@@ -98,21 +133,24 @@ function YardVisualizationContent() {
             selectedZoneId={selectedZoneId}
             highlightedZoneId={highlightedZoneId}
             onZoneClick={handleZoneClick}
+            onCoilDrop={handleCoilDrop}
             columns={5}
           />
         </div>
 
         {/* Coil Details Table - Below Open Area */}
-        <CoilTable selectedZone={selectedZone} onDataChange={handleDataChange} />
+        <CoilTable
+          selectedZone={selectedZone}
+          onDataChange={handleDataChange}
+        />
       </main>
 
       {/* Footer */}
       <div className="container mx-auto px-4 pb-4">
-          <Footer />
+        <Footer />
       </div>
-        
     </div>
-  )
+  );
 }
 
 export default function YardVisualization() {
@@ -120,5 +158,5 @@ export default function YardVisualization() {
     <Suspense fallback={null}>
       <YardVisualizationContent />
     </Suspense>
-  )
+  );
 }
