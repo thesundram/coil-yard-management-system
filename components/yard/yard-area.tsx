@@ -12,10 +12,19 @@ interface YardAreaProps {
   selectedZoneId: string | null
   highlightedZoneId: string | null
   onZoneClick: (zone: Zone) => void
+  onCoilDrop?: (coilId: string, zoneId: string) => void
   columns?: number
 }
 
-export function YardArea({ title, zones, selectedZoneId, highlightedZoneId, onZoneClick, columns = 5 }: YardAreaProps) {
+export function YardArea({
+  title,
+  zones,
+  selectedZoneId,
+  highlightedZoneId,
+  onZoneClick,
+  onCoilDrop,
+  columns = 5,
+}: YardAreaProps) {
   const areaCode = zones.length > 0 ? zones[0].areaCode : ""
   const totalCoils = areaCode ? getCoilCountByArea(areaCode) : 0
 
@@ -38,6 +47,7 @@ export function YardArea({ title, zones, selectedZoneId, highlightedZoneId, onZo
               isSelected={selectedZoneId === zone.id}
               isHighlighted={highlightedZoneId === zone.id}
               onClick={() => onZoneClick(zone)}
+              onCoilDrop={onCoilDrop}
             />
           ))}
         </div>
