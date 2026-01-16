@@ -238,6 +238,8 @@ export function importCoilsFromData(
   const errors: string[] = []
   let imported = 0
 
+  console.log("[v0] Starting import - newCoils:", newCoils.length, "newAllocations:", newAllocations.length)
+
   // Create a map for quick lookup of new coils
   const newCoilMap = new Map<string, Coil>()
   for (const coil of newCoils) {
@@ -256,6 +258,8 @@ export function importCoilsFromData(
     imported++
   }
 
+  console.log("[v0] Total coils after import:", coils.length)
+
   const zoneCountsDuringImport = new Map<string, number>()
 
   // Initialize with existing allocations
@@ -264,11 +268,17 @@ export function importCoilsFromData(
     zoneCountsDuringImport.set(alloc.zoneId, currentCount + 1)
   }
 
+  console.log("[v0] Existing allocations:", allocations.length)
+
+  let allocationsAdded = 0
+  let allocationsUpdated = 0
+
   for (const alloc of newAllocations) {
     // Check if coil exists (in existing coils or new coils)
     const coilExists = coils.find((c) => c.id === alloc.coilId) || newCoilMap.get(alloc.coilId)
     if (!coilExists) {
       errors.push(`Allocation for ${alloc.coilId} skipped - coil not found`)
+      console.log("[v0] Coil not found:", alloc.coilId)
       continue
     }
 
@@ -276,6 +286,7 @@ export function importCoilsFromData(
     const zoneExists = zones.find((z) => z.id === alloc.zoneId)
     if (!zoneExists) {
       errors.push(`Allocation for ${alloc.coilId} skipped - zone ${alloc.zoneId} not found`)
+      console.log("[v0] Zone not found:", alloc.zoneId)
       continue
     }
 
@@ -295,6 +306,7 @@ export function importCoilsFromData(
         const newCount = zoneCountsDuringImport.get(alloc.zoneId) || 0
         zoneCountsDuringImport.set(alloc.zoneId, newCount + 1)
       }
+      allocationsUpdated++
     } else {
       // Check zone capacity for new allocations using tracked counts
       const currentZoneCount = zoneCountsDuringImport.get(alloc.zoneId) || 0
@@ -303,12 +315,18 @@ export function importCoilsFromData(
         errors.push(
           `Allocation for ${alloc.coilId} skipped - zone ${alloc.zoneId} at max capacity (${zone.maxCapacity})`,
         )
+        console.log("[v0] Zone at capacity:", alloc.zoneId, currentZoneCount, "/", zone.maxCapacity)
         continue
       }
       allocations.push(alloc)
       zoneCountsDuringImport.set(alloc.zoneId, currentZoneCount + 1)
+      allocationsAdded++
     }
   }
+
+  console.log("[v0] Allocations added:", allocationsAdded, "updated:", allocationsUpdated)
+  console.log("[v0] Total allocations after import:", allocations.length)
+  console.log("[v0] Errors:", errors)
 
   return {
     success: errors.length === 0,
